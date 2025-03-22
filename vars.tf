@@ -47,3 +47,8 @@ variable "environment" {
     type = string
     default = "prod"
 }
+
+variable "project" {
+    type = string
+    default = "first-project"
+}

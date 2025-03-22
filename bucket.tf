@@ -12,3 +12,14 @@ resource "digitalocean_spaces_bucket" "bucket" {
     }
   }
 }
+
+data "digitalocean_project" "my_project" {
+  name = var.project
+}
+
+resource "digitalocean_project_resources" "assoc" {
+  project = data.digitalocean_project.my_project.id
+  resources = [
+    digitalocean_spaces_bucket.bucket.urn
+  ]
+}
