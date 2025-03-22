@@ -35,9 +35,11 @@ variable "expiration" {
 
 variable "SPACES_ACCESS_ID" {
     type = string
+    default = ""
 }
 
 variable "SPACES_SECRET_KEY" {
     type = string
+    default = ""
 }
     
