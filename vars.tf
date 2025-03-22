@@ -42,4 +42,8 @@ variable "SPACES_SECRET_KEY" {
     type = string
     default = ""
 }
-    
+
+variable "environment" {
+    type = string
+    default = "prod"
+}

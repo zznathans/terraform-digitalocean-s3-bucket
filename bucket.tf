@@ -1,5 +1,5 @@
 resource "digitalocean_spaces_bucket" "bucket" {
-  name   = var.name
+  name   = "${var.environment}-${var.region}-${var.name}"
   region = var.region
   force_destroy = var.force_destroy
 
