@@ -4,6 +4,9 @@ stages:
   - deploy
   - release
 
+before_script:
+  - export TERRAFORM_MODULE_SYSTEM=digitalocean
+
 include:
   - component: $CI_SERVER_FQDN/ci/semantic-release/semantic-release-simple@0.1.4
   - template: Terraform-Module.gitlab-ci.yml
