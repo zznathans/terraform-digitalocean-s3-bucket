@@ -29,6 +29,6 @@ variable "force_destroy" {
 }
 
 variable "expiration" {
-    type = int
+    type = number
     default = 30
 }
