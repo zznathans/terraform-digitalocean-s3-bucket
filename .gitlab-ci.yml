@@ -1,6 +1,3 @@
 include:
   - component: $CI_SERVER_FQDN/ci/semantic-release/semantic-release-simple@0.1.4
-
-
-include:
-  template: Terraform-Module.gitlab-ci.yml
+  - template: Terraform-Module.gitlab-ci.yml
