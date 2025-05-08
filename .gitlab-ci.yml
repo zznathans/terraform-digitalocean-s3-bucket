@@ -6,9 +6,9 @@ stages:
 
 before_script:
   - export TERRAFORM_MODULE_SYSTEM=digitalocean
-  - export TF_VAR_SPACES_ACCESS_KEY_ID=$ACCESS_KEY
-  - export TF_VAR_SPACES_SECRET_ACCESS_KEY=$SECRET_KEY
-  - exprot TF_VAR_DO_TOKEN=$DO_API_KEY
+  - export TF_VAR_SPACES_ACCESS_KEY_ID=$SPACES_ACCESS_KEY_ID
+  - export TF_VAR_SPACES_SECRET_ACCESS_KEY=$SPACES_SECRET_ACCESS_KEY
+  - exprot TF_VAR_DO_TOKEN=$DO_TOKEN
 
 include:
   - component: $CI_SERVER_FQDN/ci/semantic-release/semantic-release-simple@0.1.4
