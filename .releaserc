@@ -6,13 +6,7 @@
     [
       "@semantic-release/gitlab",
       {
-        "gitlabUrl": "https://gitlab-ca-bhs-1.yeetbox.net",
-        "assets": [
-          { "path": "dist/asset.min.css", "label": "CSS distribution" },
-          { "path": "dist/asset.min.js", "label": "JS distribution", "target": "generic_package" },
-          { "path": "dist/asset.min.js", "label": "v${nextRelease.version}.js" },
-          { "url": "https://gitlab-ca-bhs-1.yeetbox.net/terraform/s3-bucket/-/blob/master/README.md", "label": "Readme" }
-        ]
+        "gitlabUrl": "https://gitlab-ca-bhs-1.yeetbox.net"
       }
     ],
     [
