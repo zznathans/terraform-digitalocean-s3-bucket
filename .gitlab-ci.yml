@@ -8,5 +8,6 @@ before_script:
   - export TERRAFORM_MODULE_SYSTEM=digitalocean
 
 include:
-  - component: $CI_SERVER_FQDN/ci/semantic-release/semantic-release-simple@0.1.4
+include:
+  - component: $CI_SERVER_FQDN/ci/semantic-release/release@~latest
   - template: Terraform-Module.gitlab-ci.yml
