@@ -65,3 +65,14 @@ variable "access_keys" {
     }))
     default = []
 }
+
+variable "push_gcp_secret" {
+    type = bool
+    default = false
+}
+
+variable "gcp_region" {
+    type = string
+    default = null
+}
+

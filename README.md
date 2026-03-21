@@ -1,12 +1,13 @@
 # terraform/s3-bucket
 
-Terraform configuration for a [DigitalOcean Spaces](https://docs.digitalocean.com/products/spaces/) bucket with optional versioning, lifecycle rules, access logging, and access key management.
+Terraform configuration for a [DigitalOcean Spaces](https://docs.digitalocean.com/products/spaces/) bucket with optional versioning, lifecycle rules, access logging, access key management, and GCP Secret Manager integration.
 
 ## Requirements
 
 | Name | Version |
 |------|---------|
 | [digitalocean](https://registry.terraform.io/providers/digitalocean/digitalocean/latest) | `~> 2.0` |
+| [google](https://registry.terraform.io/providers/hashicorp/google/latest) | (any) |
 
 ## Usage
 
@@ -14,8 +15,8 @@ Terraform configuration for a [DigitalOcean Spaces](https://docs.digitalocean.co
 module "my_bucket" {
   source = "./s3-bucket"
 
-  do_token         = var.do_token
-  SPACES_ACCESS_ID = var.SPACES_ACCESS_ID
+  do_token          = var.do_token
+  SPACES_ACCESS_ID  = var.SPACES_ACCESS_ID
   SPACES_SECRET_KEY = var.SPACES_SECRET_KEY
 
   project     = "my-project"
@@ -48,10 +49,18 @@ module "my_bucket" {
   # Optional: access keys (omit or set to [] to skip)
   access_keys = [
     {
-      name        = "ci-reader"
-      permissions = "read"
+      name       = "ci-reader"
+      permission = "read"
+    },
+    {
+      name       = "app-readwrite"
+      permission = "readwrite"
     }
   ]
+
+  # Optional: push each access key as a GCP Secret Manager secret
+  push_gcp_secret = true
+  gcp_region      = "us-central1"
 }
 ```
 
@@ -71,6 +80,8 @@ module "my_bucket" {
 | `lifecycle_rules` | `list(object)` | `[]` | no | List of lifecycle rules (see below) |
 | `logging_bucket` | `object` | `null` | no | Access log target config (omit to disable logging) |
 | `access_keys` | `list(object)` | `[]` | no | Bucket-scoped access keys to create |
+| `push_gcp_secret` | `bool` | `false` | no | When `true`, create a GCP Secret Manager secret for each access key |
+| `gcp_region` | `string` | `null` | no | GCP region for Secret Manager regional secrets (required if `push_gcp_secret = true`) |
 
 ### `lifecycle_rules` object
 
@@ -97,7 +108,24 @@ module "my_bucket" {
 | Field | Type | Description |
 |-------|------|-------------|
 | `name` | `string` | Name for the access key |
-| `permissions` | `string` | `read` or `readwrite` |
+| `permission` | `string` | `read` or `readwrite` |
+
+## GCP Secret Manager integration
+
+When `push_gcp_secret = true`, a `google_secret_manager_regional_secret` and corresponding secret version are created for **each** access key. Secrets are named `{bucket_name}-{region}-{key_name}`.
+
+Each secret version stores a JSON payload:
+
+```json
+{
+  "access_key":  "<spaces key id>",
+  "secret_key":  "<spaces secret>",
+  "bucket_name": "<bucket name>",
+  "endpoint":    "https://<region>.digitaloceanspaces.com"
+}
+```
+
+This structure is compatible with [External Secrets Operator](https://external-secrets.io/) — individual fields can be extracted via a `SecretStore` `remoteRef` with a `property` selector.
 
 ## Resources
 
@@ -105,47 +133,9 @@ module "my_bucket" {
 |----------|-------------|
 | `digitalocean_spaces_bucket.bucket` | The Spaces bucket |
 | `digitalocean_spaces_bucket_logging.logging` | Access log shipping (created only when `logging_bucket` is set) |
-| `digitalocean_spaces_bucket_access_keys.access_keys` | Bucket-scoped access keys |
+| `digitalocean_spaces_key.access_keys` | Bucket-scoped access keys (one per entry in `access_keys`) |
+| `google_secret_manager_regional_secret.secret` | GCP secret per access key (created only when `push_gcp_secret = true`) |
+| `google_secret_manager_regional_secret_version.secret` | Secret version holding credentials JSON (created only when `push_gcp_secret = true`) |
 | `data.digitalocean_project.project` | Looks up the DigitalOcean project by name |
 
-
-
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab-ca-bhs-1.yeetbox.net/terraform/s3-bucket.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-- [ ] [Set up project integrations](https://gitlab-ca-bhs-1.yeetbox.net/terraform/s3-bucket/-/settings/integrations)
-
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
 - [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
