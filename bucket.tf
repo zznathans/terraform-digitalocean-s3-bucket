@@ -42,14 +42,13 @@ resource "digitalocean_spaces_bucket_logging" "logging" {
   region        = var.logging_bucket.region
 }
 
-resource "digitalocean_spaces_bucket_access_keys" "access_keys" {
-  bucket = digitalocean_spaces_bucket.bucket.name
+resource "digitalocean_spaces_key" "access_keys" {
+  for_each = { for k in var.access_keys : k.name => k }
 
-  dynamic "key" {
-    for_each = var.access_keys
-    content {
-      name        = key.value.name
-      permissions = key.value.permissions
-    }
+  name = each.value.name
+
+  grant {
+    bucket     = digitalocean_spaces_bucket.bucket.name
+    permission = each.value.permission
   }
 }

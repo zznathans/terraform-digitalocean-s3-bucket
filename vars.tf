@@ -60,8 +60,8 @@ variable "logging_bucket" {
 
 variable "access_keys" {
     type = list(object({
-        name = string
-        permissions = string
+        name       = string
+        permission = string
     }))
     default = []
 }
