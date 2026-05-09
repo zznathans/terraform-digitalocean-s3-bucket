@@ -19,3 +19,6 @@ jobs:
 
       - name: Validate
         run: tofu validate
+
+      - name: Test
+        run: tofu test
