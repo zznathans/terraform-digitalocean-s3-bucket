@@ -1,13 +1,14 @@
 # terraform/s3-bucket
 
-Terraform configuration for a [DigitalOcean Spaces](https://docs.digitalocean.com/products/spaces/) bucket with optional versioning, lifecycle rules, access logging, access key management, and GCP Secret Manager integration.
+Terraform configuration for a [DigitalOcean Spaces](https://docs.digitalocean.com/products/spaces/) bucket with optional versioning, lifecycle rules, access logging, access key management, and secret manager integration (GCP and/or AWS).
 
 ## Requirements
 
 | Name | Version |
 |------|---------|
 | [digitalocean](https://registry.terraform.io/providers/digitalocean/digitalocean/latest) | `~> 2.0` |
-| [google](https://registry.terraform.io/providers/hashicorp/google/latest) | (any) |
+| [google](https://registry.terraform.io/providers/hashicorp/google/latest) | `>= 4.0` — only if `push_gcp_secret = true` |
+| [aws](https://registry.terraform.io/providers/hashicorp/aws/latest) | `>= 5.0` — only if `push_aws_secret = true` |
 
 ## Usage
 
@@ -58,10 +59,14 @@ module "my_bucket" {
     }
   ]
 
-  # Optional: push each access key as a GCP Secret Manager secret
+  # Optional: push each access key to GCP Secret Manager
   push_gcp_secret = true
   gcp_project     = "my-gcp-project-id"
   gcp_region      = "us-central1"
+
+  # Optional: push each access key to AWS Secrets Manager
+  push_aws_secret = true
+  aws_region      = "us-east-1"
 }
 ```
 
@@ -73,7 +78,6 @@ module "my_bucket" {
 | `SPACES_ACCESS_ID` | `string` | — | yes | Spaces access key ID |
 | `SPACES_SECRET_KEY` | `string` | — | yes | Spaces secret key |
 | `do_project` | `string` | — | yes | DigitalOcean project name to look up |
-| `gcp_project` | `string` | `null` | no | GCP project ID (required if `push_gcp_secret = true`) |
 | `bucket_name` | `string` | — | yes | Base name of the bucket (region is appended automatically) |
 | `region` | `string` | — | yes | DigitalOcean region slug (e.g. `nyc3`, `ams3`) |
 | `acl` | `string` | `"private"` | no | Canned ACL: `private` or `public-read` |
@@ -83,7 +87,10 @@ module "my_bucket" {
 | `logging_bucket` | `object` | `null` | no | Access log target config (omit to disable logging) |
 | `access_keys` | `list(object)` | `[]` | no | Bucket-scoped access keys to create |
 | `push_gcp_secret` | `bool` | `false` | no | When `true`, create a GCP Secret Manager secret for each access key |
-| `gcp_region` | `string` | `null` | no | GCP region for Secret Manager regional secrets (required if `push_gcp_secret = true`) |
+| `gcp_project` | `string` | `null` | no | GCP project ID (required if `push_gcp_secret = true`) |
+| `gcp_region` | `string` | `null` | no | GCP region for Secret Manager (required if `push_gcp_secret = true`) |
+| `push_aws_secret` | `bool` | `false` | no | When `true`, create an AWS Secrets Manager secret for each access key |
+| `aws_region` | `string` | `null` | no | AWS region for Secrets Manager (required if `push_aws_secret = true`) |
 
 ### `lifecycle_rules` object
 
@@ -134,22 +141,32 @@ export GOOGLE_APPLICATION_CREDENTIALS=$GCP_CREDS
 
 `GCP_CREDS` is only required when `push_gcp_secret = true`. The GCP service account must have the `roles/secretmanager.admin` role (or equivalent) on the target project.
 
-## GCP Secret Manager integration
+## Secret Manager integration
 
-When `push_gcp_secret = true`, a `google_secret_manager_regional_secret` and corresponding secret version are created for **each** access key. Secrets are named `{bucket_name}-{region}-{key_name}`.
+When `push_gcp_secret` and/or `push_aws_secret` is `true`, a secret is created in the respective provider for **each** access key. Secrets are named `{bucket_name}-{region}-{key_name}`.
 
-Each secret version stores a JSON payload:
+The `access_key` and `secret_key` values are **base64-encoded** before being written. `bucket_name` and `endpoint` are stored as plaintext.
+
+Each secret stores a JSON payload:
 
 ```json
 {
-  "access_key":  "<spaces key id>",
-  "secret_key":  "<spaces secret>",
+  "access_key":  "<base64-encoded spaces key id>",
+  "secret_key":  "<base64-encoded spaces secret>",
   "bucket_name": "<bucket name>",
   "endpoint":    "https://<region>.digitaloceanspaces.com"
 }
 ```
 
+### GCP Secret Manager
+
+Secrets are created as regional secrets. The GCP service account must have `roles/secretmanager.admin` on `gcp_project`.
+
 This structure is compatible with [External Secrets Operator](https://external-secrets.io/) — individual fields can be extracted via a `SecretStore` `remoteRef` with a `property` selector.
+
+### AWS Secrets Manager
+
+Secrets are created in the region specified by `aws_region`. The AWS credentials used must have `secretsmanager:CreateSecret`, `secretsmanager:PutSecretValue`, and `secretsmanager:TagResource` permissions.
 
 ## Resources
 
@@ -160,4 +177,6 @@ This structure is compatible with [External Secrets Operator](https://external-s
 | `digitalocean_spaces_key.access_keys` | Bucket-scoped access keys (one per entry in `access_keys`) |
 | `google_secret_manager_regional_secret.secret` | GCP secret per access key (created only when `push_gcp_secret = true`) |
 | `google_secret_manager_regional_secret_version.secret` | Secret version holding credentials JSON (created only when `push_gcp_secret = true`) |
+| `aws_secretsmanager_secret.secret` | AWS secret per access key (created only when `push_aws_secret = true`) |
+| `aws_secretsmanager_secret_version.secret` | Secret version holding credentials JSON (created only when `push_aws_secret = true`) |
 | `data.digitalocean_project.project` | Looks up the DigitalOcean project by name |

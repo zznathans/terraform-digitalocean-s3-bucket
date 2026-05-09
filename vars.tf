@@ -88,3 +88,14 @@ variable "gcp_region" {
     default = null
 }
 
+variable "push_aws_secret" {
+    type    = bool
+    default = false
+}
+
+variable "aws_region" {
+    type        = string
+    default     = null
+    description = "AWS region for Secrets Manager (required if push_aws_secret = true)"
+}
+
