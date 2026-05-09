@@ -166,13 +166,13 @@ export GOOGLE_APPLICATION_CREDENTIALS=$GCP_CREDS
 
 `GCP_CREDS` is only required when `push_gcp_secret = true`. The GCP service account must have the `roles/secretmanager.admin` role (or equivalent) on the target project.
 
-## Secret Manager integration
+## GCP Secret Manager
 
-When `push_gcp_secret` and/or `push_aws_secret` is `true`, a secret is created in the respective provider for **each** access key. Secrets are named `{bucket_name}-{region}-{key_name}`.
+When `push_gcp_secret = true`, a secret is created for **each** access key, named `{bucket_name}-{region}-{key_name}`. The GCP service account must have `roles/secretmanager.admin` on `gcp_project`.
 
-The `access_key` and `secret_key` values are **base64-encoded** before being written. `bucket_name` and `endpoint` are stored as plaintext.
+### Secret payload
 
-Each secret stores a JSON payload:
+The `access_key` and `secret_key` values are **base64-encoded**. `bucket_name` and `endpoint` are stored as plaintext.
 
 ```json
 {
@@ -183,21 +183,34 @@ Each secret stores a JSON payload:
 }
 ```
 
-### GCP Secret Manager
+This structure is compatible with [External Secrets Operator](https://external-secrets.io/) — individual fields can be extracted via a `SecretStore` `remoteRef` with a `property` selector.
+
+### Regional vs global secrets
 
 Set `gcp_secret_regional = true` (default) to create a **regional secret** pinned to `gcp_region`.
 
-Set `gcp_secret_regional = false` to create a **global secret** with a replication policy:
-- `gcp_replication = { automatic = true }` — Google-managed automatic replication (recommended for most use cases).
-- `gcp_replication = { automatic = false, locations = ["us-central1", "us-east1"] }` — user-managed replication to specific regions.
+Set `gcp_secret_regional = false` to create a **global secret** with a replication policy controlled by `gcp_replication`:
+- `{ automatic = true }` — Google-managed automatic replication (recommended for most use cases).
+- `{ automatic = false, locations = ["us-central1", "us-east1"] }` — user-managed replication to specific regions.
 
-The GCP service account must have `roles/secretmanager.admin` on `gcp_project`.
+## AWS Secrets Manager
 
-This structure is compatible with [External Secrets Operator](https://external-secrets.io/) — individual fields can be extracted via a `SecretStore` `remoteRef` with a `property` selector.
+When `push_aws_secret = true`, a secret is created for **each** access key in the region specified by `aws_region`, named `{bucket_name}-{region}-{key_name}`.
 
-### AWS Secrets Manager
+### Secret payload
 
-Secrets are created in the region specified by `aws_region`. The AWS credentials used must have `secretsmanager:CreateSecret`, `secretsmanager:PutSecretValue`, and `secretsmanager:TagResource` permissions.
+The `access_key` and `secret_key` values are **base64-encoded**. `bucket_name` and `endpoint` are stored as plaintext.
+
+```json
+{
+  "access_key":  "<base64-encoded spaces key id>",
+  "secret_key":  "<base64-encoded spaces secret>",
+  "bucket_name": "<bucket name>",
+  "endpoint":    "https://<region>.digitaloceanspaces.com"
+}
+```
+
+The AWS credentials used must have `secretsmanager:CreateSecret`, `secretsmanager:PutSecretValue`, and `secretsmanager:TagResource` permissions.
 
 ## Resources
 
