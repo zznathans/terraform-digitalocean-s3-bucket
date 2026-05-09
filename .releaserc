@@ -3,12 +3,7 @@
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
-    [
-      "@semantic-release/gitlab",
-      {
-        "gitlabUrl": "https://gitlab-ca-bhs-1.yeetbox.net"
-      }
-    ],
+    "@semantic-release/github",
     [
         "@semantic-release/git",
         {

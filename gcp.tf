@@ -1,7 +1,7 @@
 resource "google_secret_manager_regional_secret" "secret" {
   for_each = var.push_gcp_secret ? { for k in var.access_keys : k.name => k } : {}
 
-  project   = var.project
+  project   = var.gcp_project
   location  = var.gcp_region
   secret_id = "${var.bucket_name}-${var.region}-${each.key}"
 

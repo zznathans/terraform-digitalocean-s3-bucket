@@ -19,7 +19,7 @@ module "my_bucket" {
   SPACES_ACCESS_ID  = var.SPACES_ACCESS_ID
   SPACES_SECRET_KEY = var.SPACES_SECRET_KEY
 
-  project     = "my-project"
+  do_project  = "my-project"
   bucket_name = "my-app"
   region      = "nyc3"
   acl         = "private"
@@ -60,6 +60,7 @@ module "my_bucket" {
 
   # Optional: push each access key as a GCP Secret Manager secret
   push_gcp_secret = true
+  gcp_project     = "my-gcp-project-id"
   gcp_region      = "us-central1"
 }
 ```
@@ -71,7 +72,8 @@ module "my_bucket" {
 | `do_token` | `string` | — | yes | DigitalOcean API token |
 | `SPACES_ACCESS_ID` | `string` | — | yes | Spaces access key ID |
 | `SPACES_SECRET_KEY` | `string` | — | yes | Spaces secret key |
-| `project` | `string` | — | yes | DigitalOcean project name to look up |
+| `do_project` | `string` | — | yes | DigitalOcean project name to look up |
+| `gcp_project` | `string` | `null` | no | GCP project ID (required if `push_gcp_secret = true`) |
 | `bucket_name` | `string` | — | yes | Base name of the bucket (region is appended automatically) |
 | `region` | `string` | — | yes | DigitalOcean region slug (e.g. `nyc3`, `ams3`) |
 | `acl` | `string` | `"private"` | no | Canned ACL: `private` or `public-read` |
@@ -110,6 +112,28 @@ module "my_bucket" {
 | `name` | `string` | Name for the access key |
 | `permission` | `string` | `read` or `readwrite` |
 
+## CI/CD
+
+The following environment variables must be available to the CI runner:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ACCESS_KEY` | yes | DigitalOcean Spaces access key ID, base64-encoded |
+| `SECRET_KEY` | yes | DigitalOcean Spaces secret key, base64-encoded |
+| `DO_API_KEY` | yes | DigitalOcean API token, base64-encoded |
+| `GCP_CREDS` | if `push_gcp_secret = true` | Path to a GCP service account credentials JSON file |
+
+Before running OpenTofu, decode the base64 values and export them as `TF_VAR_*` variables:
+
+```sh
+export TF_VAR_do_access_key=$(echo $ACCESS_KEY | base64 -d)
+export TF_VAR_do_secret_key=$(echo $SECRET_KEY | base64 -d)
+export TF_VAR_do_token=$(echo $DO_API_KEY | base64 -d)
+export GOOGLE_APPLICATION_CREDENTIALS=$GCP_CREDS
+```
+
+`GCP_CREDS` is only required when `push_gcp_secret = true`. The GCP service account must have the `roles/secretmanager.admin` role (or equivalent) on the target project.
+
 ## GCP Secret Manager integration
 
 When `push_gcp_secret = true`, a `google_secret_manager_regional_secret` and corresponding secret version are created for **each** access key. Secrets are named `{bucket_name}-{region}-{key_name}`.
@@ -137,5 +161,3 @@ This structure is compatible with [External Secrets Operator](https://external-s
 | `google_secret_manager_regional_secret.secret` | GCP secret per access key (created only when `push_gcp_secret = true`) |
 | `google_secret_manager_regional_secret_version.secret` | Secret version holding credentials JSON (created only when `push_gcp_secret = true`) |
 | `data.digitalocean_project.project` | Looks up the DigitalOcean project by name |
-
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)

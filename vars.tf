@@ -10,8 +10,15 @@ variable "SPACES_SECRET_KEY" {
     type = string
 }
 
-variable "project" {
-    type = string
+variable "do_project" {
+    type        = string
+    description = "DigitalOcean project name"
+}
+
+variable "gcp_project" {
+    type        = string
+    default     = null
+    description = "GCP project ID (required if push_gcp_secret = true)"
 }
 
 variable "tags" {
@@ -64,6 +71,11 @@ variable "access_keys" {
         permission = string
     }))
     default = []
+
+    validation {
+        condition     = alltrue([for k in var.access_keys : contains(["read", "readwrite"], k.permission)])
+        error_message = "Each access key permission must be \"read\" or \"readwrite\"."
+    }
 }
 
 variable "push_gcp_secret" {
