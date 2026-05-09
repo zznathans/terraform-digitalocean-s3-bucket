@@ -119,3 +119,12 @@ variable "aws_region" {
     default     = null
     description = "AWS region for Secrets Manager (required if push_aws_secret = true)"
 }
+
+variable "aws_replicas" {
+    type = list(object({
+        region     = string
+        kms_key_id = optional(string, null)
+    }))
+    default     = []
+    description = "Regions to replicate each AWS secret into. Each entry requires a region; kms_key_id is optional (defaults to aws/secretsmanager in that region)."
+}

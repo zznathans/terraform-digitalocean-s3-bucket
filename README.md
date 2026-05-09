@@ -109,6 +109,7 @@ module "my_bucket" {
 | `gcp_replication` | `object` | `{automatic=true, locations=[]}` | no | Replication policy for global GCP secrets (used when `gcp_secret_regional = false`) |
 | `push_aws_secret` | `bool` | `false` | no | When `true`, create an AWS Secrets Manager secret for each access key |
 | `aws_region` | `string` | `null` | no | AWS region for Secrets Manager (required if `push_aws_secret = true`) |
+| `aws_replicas` | `list(object)` | `[]` | no | Additional regions to replicate each AWS secret into (see below) |
 
 ### `lifecycle_rules` object
 
@@ -143,6 +144,15 @@ Only used when `push_gcp_secret = true` and `gcp_secret_regional = false`.
 |-------|------|---------|-------------|
 | `automatic` | `bool` | `true` | When `true`, use automatic replication (Google-managed). When `false`, replicate to specific `locations`. |
 | `locations` | `list(string)` | `[]` | GCP regions to replicate into (e.g. `["us-central1", "us-east1"]`). Only used when `automatic = false`. |
+
+### `aws_replicas` object
+
+Only used when `push_aws_secret = true`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `region` | `string` | — | AWS region to replicate the secret into |
+| `kms_key_id` | `string` | `null` | ARN, key ID, or alias of the KMS key in the replica region. Omit to use `aws/secretsmanager`. |
 
 ## CI/CD
 
@@ -210,7 +220,20 @@ The `access_key` and `secret_key` values are **base64-encoded**. `bucket_name` a
 }
 ```
 
-The AWS credentials used must have `secretsmanager:CreateSecret`, `secretsmanager:PutSecretValue`, and `secretsmanager:TagResource` permissions.
+### Replication
+
+Set `aws_replicas` to replicate each secret into additional regions:
+
+```hcl
+aws_replicas = [
+  { region = "us-west-2" },
+  { region = "eu-west-1", kms_key_id = "arn:aws:kms:eu-west-1:123456789012:key/mrk-abc123" }
+]
+```
+
+Omitting `kms_key_id` causes AWS to use the default `aws/secretsmanager` KMS key in that region.
+
+The AWS credentials used must have `secretsmanager:CreateSecret`, `secretsmanager:PutSecretValue`, `secretsmanager:TagResource`, and (if using replicas) `secretsmanager:ReplicateSecretToRegions` permissions.
 
 ## Resources
 

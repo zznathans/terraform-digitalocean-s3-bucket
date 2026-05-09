@@ -4,6 +4,14 @@ resource "aws_secretsmanager_secret" "secret" {
   name        = "${var.bucket_name}-${var.region}-${each.key}"
   description = "DigitalOcean Spaces credentials for ${var.bucket_name}-${var.region}-${each.key}"
 
+  dynamic "replica" {
+    for_each = var.aws_replicas
+    content {
+      region     = replica.value.region
+      kms_key_id = replica.value.kms_key_id
+    }
+  }
+
   tags = {
     managed-by = "terraform"
     app        = "${var.bucket_name}-${var.region}-s3-credentials"
