@@ -2,27 +2,17 @@ variable "do_token" {
     type = string
 }
 
-variable "SPACES_ACCESS_ID" {
+variable "spaces_access_id" {
     type = string
 }
 
-variable "SPACES_SECRET_KEY" {
+variable "spaces_secret_key" {
     type = string
 }
 
 variable "do_project" {
     type        = string
     description = "DigitalOcean project name"
-}
-
-variable "gcp_project" {
-    type        = string
-    default     = null
-    description = "GCP project ID (required if push_gcp_secret = true)"
-}
-
-variable "tags" {
-    type = list(string)
 }
 
 variable "bucket_name" {
@@ -34,12 +24,23 @@ variable "region" {
 }
 
 variable "acl" {
-    type = string
+    type    = string
     default = "private"
+
+    validation {
+        condition     = contains(["private", "public-read"], var.acl)
+        error_message = "acl must be \"private\" or \"public-read\"."
+    }
 }
 
 variable "versioning" {
-    type = bool
+    type    = bool
+    default = false
+}
+
+variable "force_destroy" {
+    type    = bool
+    default = false
 }
 
 variable "lifecycle_rules" {
@@ -57,8 +58,6 @@ variable "lifecycle_rules" {
 
 variable "logging_bucket" {
     type = object({
-      region        = string
-      bucket        = string
       target_bucket = string
       target_prefix = optional(string, "access-logs/")
     })
@@ -79,13 +78,35 @@ variable "access_keys" {
 }
 
 variable "push_gcp_secret" {
-    type = bool
+    type    = bool
     default = false
 }
 
+variable "gcp_project" {
+    type        = string
+    default     = null
+    description = "GCP project ID (required if push_gcp_secret = true)"
+}
+
+variable "gcp_secret_regional" {
+    type        = bool
+    default     = true
+    description = "When true, create a regional secret (requires gcp_region). When false, create a global secret with replication policy (requires gcp_replication)."
+}
+
 variable "gcp_region" {
-    type = string
-    default = null
+    type        = string
+    default     = null
+    description = "GCP region for Secret Manager (required if push_gcp_secret = true and gcp_secret_regional = true)"
+}
+
+variable "gcp_replication" {
+    type = object({
+        automatic = optional(bool, true)
+        locations = optional(list(string), [])
+    })
+    default     = { automatic = true, locations = [] }
+    description = "Replication policy for global GCP secrets (used when push_gcp_secret = true and gcp_secret_regional = false). Set automatic = true for automatic replication, or provide a locations list for user-managed replication."
 }
 
 variable "push_aws_secret" {
@@ -98,4 +119,3 @@ variable "aws_region" {
     default     = null
     description = "AWS region for Secrets Manager (required if push_aws_secret = true)"
 }
-
