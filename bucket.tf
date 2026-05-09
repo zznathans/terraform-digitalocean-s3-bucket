@@ -1,7 +1,8 @@
 resource "digitalocean_spaces_bucket" "bucket" {
-  name   = "${var.bucket_name}-${var.region}"
-  region = var.region
-  acl    = var.acl
+  name          = "${var.bucket_name}-${var.region}"
+  region        = var.region
+  acl           = var.acl
+  force_destroy = var.force_destroy
 
   versioning {
     enabled = var.versioning
@@ -37,9 +38,9 @@ resource "digitalocean_spaces_bucket_logging" "logging" {
   count = var.logging_bucket != null ? 1 : 0
 
   bucket        = digitalocean_spaces_bucket.bucket.name
+  region        = var.region
   target_bucket = var.logging_bucket.target_bucket
   target_prefix = var.logging_bucket.target_prefix
-  region        = var.logging_bucket.region
 }
 
 resource "digitalocean_spaces_key" "access_keys" {

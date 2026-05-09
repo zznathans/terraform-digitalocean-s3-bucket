@@ -1,7 +1,16 @@
 resource "aws_secretsmanager_secret" "secret" {
   for_each = var.push_aws_secret ? { for k in var.access_keys : k.name => k } : {}
 
-  name = "${var.bucket_name}-${var.region}-${each.key}"
+  name        = "${var.bucket_name}-${var.region}-${each.key}"
+  description = "DigitalOcean Spaces credentials for ${var.bucket_name}-${var.region}-${each.key}"
+
+  dynamic "replica" {
+    for_each = var.aws_replicas
+    content {
+      region     = replica.value.region
+      kms_key_id = replica.value.kms_key_id
+    }
+  }
 
   tags = {
     managed-by = "terraform"
