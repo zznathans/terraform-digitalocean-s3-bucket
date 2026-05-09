@@ -28,6 +28,7 @@ module "my_bucket" {
   region      = "nyc3"
   acl         = "private"
   versioning  = true
+  tags        = { env = "production", team = "platform" }
 
   # Optional: allow destroying non-empty bucket (e.g. in dev environments)
   force_destroy = false
@@ -102,6 +103,7 @@ module "my_bucket" {
 | `lifecycle_rules` | `list(object)` | `[]` | no | List of lifecycle rules (see below) |
 | `logging_bucket` | `object` | `null` | no | Access log target config (omit to disable logging) |
 | `access_keys` | `list(object)` | `[]` | no | Bucket-scoped access keys to create |
+| `tags` | `map(string)` | `{}` | no | Tags merged into all supported resources (GCP labels, AWS tags). GCP requires lowercase keys/values. |
 | `push_gcp_secret` | `bool` | `false` | no | When `true`, create a GCP Secret Manager secret for each access key |
 | `gcp_project` | `string` | `null` | no | GCP project ID (required if `push_gcp_secret = true`) |
 | `gcp_secret_regional` | `bool` | `true` | no | `true` = regional secret (requires `gcp_region`); `false` = global secret (requires `gcp_replication`) |

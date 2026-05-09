@@ -12,10 +12,10 @@ resource "aws_secretsmanager_secret" "secret" {
     }
   }
 
-  tags = {
+  tags = merge(var.tags, {
     managed-by = "terraform"
     app        = "${var.bucket_name}-${var.region}-s3-credentials"
-  }
+  })
 }
 
 resource "aws_secretsmanager_secret_version" "secret" {

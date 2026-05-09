@@ -77,6 +77,12 @@ variable "access_keys" {
   }
 }
 
+variable "tags" {
+  type        = map(string)
+  default     = {}
+  description = "Tags to merge into all supported resources. Applied as labels on GCP secrets and tags on AWS secrets. GCP requires lowercase keys and values."
+}
+
 variable "push_gcp_secret" {
   type    = bool
   default = false

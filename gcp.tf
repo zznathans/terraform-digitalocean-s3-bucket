@@ -20,10 +20,10 @@ resource "google_secret_manager_regional_secret" "secret" {
   location  = var.gcp_region
   secret_id = "${var.bucket_name}-${var.region}-${each.key}"
 
-  labels = {
+  labels = merge(var.tags, {
     managed-by = "terraform"
     app        = "${var.bucket_name}-${var.region}-s3-credentials"
-  }
+  })
 }
 
 resource "google_secret_manager_regional_secret_version" "secret" {
@@ -60,10 +60,10 @@ resource "google_secret_manager_secret" "secret" {
     }
   }
 
-  labels = {
+  labels = merge(var.tags, {
     managed-by = "terraform"
     app        = "${var.bucket_name}-${var.region}-s3-credentials"
-  }
+  })
 }
 
 resource "google_secret_manager_secret_version" "secret" {
